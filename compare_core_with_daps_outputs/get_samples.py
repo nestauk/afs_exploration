@@ -14,7 +14,7 @@ from datetime import datetime
 import string
 from argparse import ArgumentParser
 import pathlib
-import tqdm
+from tqdm import tqdm
 
 from compare_core_with_daps_outputs import config, schemas
 
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     # Correct UPRN and create unique id in daps
     df = df.drop_nulls(subset="INSPECTION_DATE")
 
-    df = df.with_columns((pl.col("UPRN").map_elements(convert_float).alias("corrected_uprn")))
+    df = df.with_columns((pl.col("UPRN").map_elements(convert_float, return_dtype=pl.String).alias("corrected_uprn")))
     df = df.drop("UPRN")
     df = df.with_columns(pl.col("corrected_uprn").str.replace(" unknown", ""))
     df = df.with_columns((pl.col("corrected_uprn").cast(pl.String) + pl.col("INSPECTION_DATE").cast(pl.String)).alias("uprn_date_id"))
