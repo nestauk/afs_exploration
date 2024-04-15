@@ -10,8 +10,13 @@ import json
 import polars as pl
 import os
 import s3fs
+from datetime import datetime
+import string
+from argparse import ArgumentParser
+import pathlib
 
-from compare_core_with_daps_outputs import config
+
+from compare_core_with_daps_outputs import config, schemas
 
 
 def convert_float(s):
@@ -21,52 +26,58 @@ def convert_float(s):
     return s
 
 
-# Import data
-test_daps = pl.read_parquet("s3://asf-daps/testing/processed_dedupl-0.parquet",
-                                columns=config["common_cols"])
-data_schema = test_daps.schema
-test_core = pl.read_csv("s3://asf-daps/testing/q2_2023_EPC_GB_preprocessed_deddupl.csv",
-                        columns=config["common_cols"],
-                        dtypes=data_schema
-                        )
+def create_argparser():
+    parser = ArgumentParser()
+
+    parser.add_argument(
+        "--file_path",
+        help="Path to processed EPC file to use. Can be local file path or S3 URI."
+        )
+    
+    parser.add_argument(
+        "--pipeline",
+        help="Specify pipeline used to create file specified in `file_path` arg. Either `core` for `asf_core_data` or `daps` for `asf_daps`."
+    )
+
+    return parser
 
 
-# Remove null values from INSPECTION_DATE which will be used to generate unique ID
-test_core = test_core.drop_nulls(subset="INSPECTION_DATE")
-test_daps = test_daps.drop_nulls(subset="INSPECTION_DATE")
+if __name__ == "__main__":
 
-# Create unique id in daps
-test_daps = test_daps.with_columns((pl.col("UPRN").map_elements(convert_float).alias("corrected_uprn")))
-test_daps = test_daps.with_columns((pl.col("corrected_uprn").cast(pl.String) + pl.col("INSPECTION_DATE").cast(pl.String)).alias("uprn_date_id"))
+    parser = create_argparser()
+    args = parser.parse_args()
 
-# Create unique id in core
-test_core = test_core.with_columns((pl.col("UPRN").map_elements(convert_float).alias("corrected_uprn")))
-test_core = test_core.with_columns(pl.col("corrected_uprn").str.replace(" unknown", ""))
-test_core = test_core.with_columns((pl.col("corrected_uprn").cast(pl.String) + pl.col("INSPECTION_DATE").cast(pl.String)).alias("uprn_date_id"))
+    today = datetime.today().strftime("%Y%m%d")
 
-# Get unique ids in core and daps
-core_uprn_ids = set(test_core.select(pl.col("uprn_date_id").unique()).to_series())
-daps_uprn_ids = set(test_daps.select(pl.col("uprn_date_id").unique()).to_series())
-id_present_in_both = core_uprn_ids.intersection(daps_uprn_ids)
+    # Import processed dataset
+    if pathlib.Path(args.file_path).suffix == ".csv":
+        df = pl.read_csv(args.file_path, columns=config["common_cols"], dtypes=schemas.epc_schema)
+    elif pathlib.Path(args.file_path).suffix == ".parquet":
+        df = pl.read_parquet(args.file_path, columns=config["common_cols"])
 
-# Get subset of datasets with common row IDs
-daps_subset = test_daps.filter(pl.col("uprn_date_id").is_in(id_present_in_both))
-core_subset = test_core.filter(pl.col("uprn_date_id").is_in(id_present_in_both))
 
-# Remove duplicated rows
-dupl_ids = set(core_subset.filter(pl.col("uprn_date_id").is_duplicated())["uprn_date_id"])
-core_subset = core_subset.filter(~pl.col("uprn_date_id").is_in(dupl_ids))
-daps_subset = daps_subset.filter(~pl.col("uprn_date_id").is_in(dupl_ids))
+    # Correct UPRN and create unique id in daps
+    df = df.drop_nulls(subset="INSPECTION_DATE")
 
-# Save datasets to S3
-fs = s3fs.S3FileSystem()
+    df = df.with_columns((pl.col("UPRN").map_elements(convert_float).alias("corrected_uprn")))
+    df = df.drop("UPRN")
+    df = df.with_columns(pl.col("corrected_uprn").str.replace(" unknown", ""))
+    df = df.with_columns((pl.col("corrected_uprn").cast(pl.String) + pl.col("INSPECTION_DATE").cast(pl.String)).alias("uprn_date_id"))
 
-# Core subset
-destination = "s3://asf-daps/testing/core_Q2_2023_processed_dedupl.parquet"
-with fs.open(destination, mode='wb') as f:
-    core_subset.write_parquet(f)
+    # Standardise nulls/unknowns and floats
+    df = df.with_columns(pl.all().fill_null(""))
+    for col in df.columns:
+        df = df.with_columns(pl.col(col).map_elements(convert_float, return_dtype=pl.String))
+        df = df.with_columns(pl.col(col).replace("unknown", ""))
 
-# Daps subset
-destination = "s3://asf-daps/testing/daps_Q2_2023_processed_dedupl.parquet"
-with fs.open(destination, mode='wb') as f:
-    daps_subset.write_parquet(f)
+    # Standardise all string cols: remove punctuation and set to uppercase
+    for col in config["string_cols"]:
+        df = df.with_columns(pl.col(col).map_elements(lambda s: s.translate(str.maketrans('', '', string.punctuation)).upper()))
+
+    # Save datasets to S3
+    fs = s3fs.S3FileSystem()
+
+    # Core subset
+    destination = f"s3://asf-daps/testing/{args.pipeline}_Q2_2023_processed_dedupl_cleaned_{today}.parquet"
+    with fs.open(destination, mode='wb') as f:
+        df.write_parquet(f)
