@@ -43,7 +43,8 @@ def create_argparser():
 
 
 if __name__ == "__main__":
-
+    
+    pl.enable_string_cache()
     parser = create_argparser()
     args = parser.parse_args()
 
