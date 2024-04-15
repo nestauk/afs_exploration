@@ -6,3 +6,6 @@ fastparquet
 dask
 PyYAML
 polars
+tqdm
+matplotlib
+notebook
