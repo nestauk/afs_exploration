@@ -88,11 +88,9 @@ string_cols:
   'SOLAR_WATER_HEATING_FLAG',
   'TENURE',
   'TRANSACTION_TYPE',
-  'UPRN',
   'BUILDING_ADDRESS_ID',
   'HEATING_SYSTEM',
   'HEATING_FUEL',
   'HP_TYPE',
   'ENERGY_RATING_CAT',
-  'corrected_uprn',
   'uprn_date_id']

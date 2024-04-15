@@ -14,7 +14,7 @@ from datetime import datetime
 import string
 from argparse import ArgumentParser
 import pathlib
-
+import tqdm
 
 from compare_core_with_daps_outputs import config, schemas
 
@@ -66,13 +66,13 @@ if __name__ == "__main__":
 
     # Standardise nulls/unknowns and floats
     df = df.with_columns(pl.all().fill_null(""))
-    for col in df.columns:
+    for col in tqdm(df.columns):
         df = df.with_columns(pl.col(col).map_elements(convert_float, return_dtype=pl.String))
         df = df.with_columns(pl.col(col).replace("unknown", ""))
 
     # Standardise all string cols: remove punctuation and set to uppercase
-    for col in config["string_cols"]:
-        df = df.with_columns(pl.col(col).map_elements(lambda s: s.translate(str.maketrans('', '', string.punctuation)).upper()))
+    for col in tqdm(config["string_cols"]):
+        df = df.with_columns(pl.col(col).map_elements(lambda s: s.translate(str.maketrans('', '', string.punctuation)).upper(), return_dtype=pl.String))
 
     # Save datasets to S3
     fs = s3fs.S3FileSystem()
