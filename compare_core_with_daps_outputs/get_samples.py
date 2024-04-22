@@ -5,10 +5,7 @@ repo_path = '/home/ubuntu/sky_workdir/asf_exploration/'  # path to asf_explorati
 import sys
 sys.path.append(repo_path)
 
-import pandas as pd
-import json
 import polars as pl
-import os
 import s3fs
 from datetime import datetime
 import string
