@@ -50,7 +50,7 @@ flourish_LAs[~flourish_LAs["Name"].isin(mcs_LAs["Name"])]
 # ### Updating local authority information
 
 # %%
-# we've mapped MCS LAs to the Flourish LA
+# we've manually mapped MCS LAs to the Flourish LA
 missing_LAs_update = pd.read_csv(
     "s3://asf-exploration/installer_show_maps_data/inputs/missing_LAs_updated.csv"
 )
