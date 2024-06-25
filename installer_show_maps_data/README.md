@@ -16,6 +16,6 @@ Open your terminal and follow the instructions:
 
 6. **Add your conda environment to the notebooks:** `python3 -m ipykernel install --user --name=installer_show`
 
-7. **Install ipykernel:** `conda install -n installer_show ipykernel --update-deps --force-reinstall`
+7. **Install kernel:** `conda install -n installer_show ipykernel --update-deps --force-reinstall`
 
 8. **Transform .py script into jupyter notebook to explore data/pipeline:** `jupytext --to notebook prep_data_for_maps.py`
