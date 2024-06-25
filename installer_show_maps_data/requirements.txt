@@ -1,0 +1,5 @@
+pandas
+fsspec
+s3fs
+ipykernel
+jupytext
