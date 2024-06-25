@@ -1,8 +1,8 @@
 # %% [markdown]
 # ## Preparing data for installerSHOW maps and plots
-# 
+#
 # This notebook is used to prepare the data for the installerSHOW maps and plots data story.
-# 
+#
 # The plots are visualised using Flourish.
 
 # %%
@@ -67,10 +67,10 @@ installations_data["local_authority_updated"] = installations_data[
 
 # %% [markdown]
 # ## Filtering data
-# 
-# 
+#
+#
 # We're removing any commercial/non-domestic installation.
-# 
+#
 # We're keeping installations of type unspecified/missing, as we can't be sure they're not domestic installations.
 
 # %%
@@ -225,6 +225,7 @@ def growth_rate(final_year, first_year):
     if first_year == 0:
         return None
     return (final_year - first_year) / first_year * 100
+
 
 # %%
 first_year = 2021
