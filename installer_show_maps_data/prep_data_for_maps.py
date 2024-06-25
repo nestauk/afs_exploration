@@ -1,8 +1,8 @@
 # %% [markdown]
 # ## Preparing data for installerSHOW maps and plots
-#
+# 
 # This notebook is used to prepare the data for the installerSHOW maps and plots data story.
-#
+# 
 # The plots are visualised using Flourish.
 
 # %%
@@ -31,7 +31,6 @@ mcs_LAs = pd.DataFrame(installations_data["local_authority"].unique()).rename(
     columns={0: "Name"}
 )
 mcs_LAs = mcs_LAs[~pd.isnull(mcs_LAs["Name"])]
-
 
 # %%
 len(flourish_LAs), len(mcs_LAs)
@@ -64,14 +63,14 @@ installations_data["local_authority_updated"] = installations_data[
 ].replace(missing_LAs_update)
 
 # %%
-# missing = flourish_LAs[~flourish_LAs["Name"].isin(installations_data["local_authority_updated"])]["Name"].unique()
+
 
 # %% [markdown]
 # ## Filtering data
-#
-#
+# 
+# 
 # We're removing any commercial/non-domestic installation.
-#
+# 
 # We're keeping installations of type unspecified/missing, as we can't be sure they're not domestic installations.
 
 # %%
@@ -107,6 +106,9 @@ installations_data = installations_data[
 
 # %%
 len(installations_data)
+
+# %%
+
 
 # %% [markdown]
 # ## Cumulative installations and installers
@@ -223,7 +225,6 @@ def growth_rate(final_year, first_year):
     if first_year == 0:
         return None
     return (final_year - first_year) / first_year * 100
-
 
 # %%
 first_year = 2021
