@@ -3,3 +3,4 @@ fsspec
 s3fs
 ipykernel
 jupytext
+xlrd

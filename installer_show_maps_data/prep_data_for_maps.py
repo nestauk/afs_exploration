@@ -1,15 +1,15 @@
 # %% [markdown]
-# ## Preparing data for installerSHOW maps and plots
-#
-# This notebook is used to prepare the data for the installerSHOW maps and plots data story.
-#
+# ## Preparing data to create maps and plots for the installerSHOW/policy plan 
+# 
+# This notebook is used to prepare the data for 1) the installerSHOW maps and plots data story and 2) policy plan.
+# 
 # The plots are visualised using Flourish.
 
 # %%
 import pandas as pd
 
 # %% [markdown]
-# ## Loading MCS installations data
+# ## 1. Loading MCS installations data
 
 # %%
 installations_data = pd.read_csv(
@@ -17,7 +17,7 @@ installations_data = pd.read_csv(
 )
 
 # %% [markdown]
-# ## Loading local authority and dealing with missing local authorities
+# ## 2. Loading local authority and dealing with missing local authorities
 
 # %%
 # information about local authorities from Flourish
@@ -66,11 +66,44 @@ installations_data["local_authority_updated"] = installations_data[
 
 
 # %% [markdown]
-# ## Filtering data
-#
-#
+# ## 3. Loading household data per local authority
+# 
+# Household info for Scotland here:
+# 
+# Household info for England and Wales here:
+# https://www.ons.gov.uk/datasets/TS041/editions/2021/versions/3
+# 
+# 
+# Data was downloaded from the websites and then uploaded to S3. Before uploading to S3 a few LA names were updated to match the names in the MCS data.
+
+# %%
+scotland_la_households =  pd.read_excel("s3://asf-exploration/installer_show_maps_data/inputs/scotland_households.xls")
+england_wales_la_households = pd.read_csv("s3://asf-exploration/installer_show_maps_data/inputs/england_wales_households.csv")
+
+
+# %%
+scotland_la_households.head()
+
+# %%
+england_wales_la_households.head()
+
+# %%
+scotland_la_households.columns
+
+# %%
+scotland_la_households = scotland_la_households[['Area Name', 'Area code', '2022']].rename(columns={'Area Name': 'LA', 'Area code': 'LA Code', '2022': 'Number of Households'})
+england_wales_la_households = england_wales_la_households.rename(columns = {'Lower Tier Local Authorities': 'LA', 'Lower Tier Local Authorities Code':'LA Code', 'Observation':'Number of Households'})
+la_households_countries_combined = pd.concat([scotland_la_households, england_wales_la_households])
+
+# %%
+la_households_countries_combined
+
+# %% [markdown]
+# ## 4. Filtering data
+# 
+# 
 # We're removing any commercial/non-domestic installation.
-#
+# 
 # We're keeping installations of type unspecified/missing, as we can't be sure they're not domestic installations.
 
 # %%
@@ -111,7 +144,7 @@ len(installations_data)
 
 
 # %% [markdown]
-# ## Cumulative installations and installers
+# ## 5. Cumulative installations and installers
 
 # %%
 cumulative_installations = installations_data.groupby(
@@ -164,7 +197,7 @@ cumulative_installers[
 ].max(), cumulative_installers["Total number of installation companies"].min()
 
 # %% [markdown]
-# ## Installations and installers yearly
+# ## 6. Installations and installers yearly
 
 # %% [markdown]
 # Number of installations per local authority per year:
@@ -214,7 +247,7 @@ installers_per_year = installers_per_year.merge(
 
 
 # %% [markdown]
-# ## Growth rate of installations and installers between 2021 and 2023
+# ## 7. Growth rate of installations and installers between 2021 and 2023
 
 # %% [markdown]
 # Should we not map when # installations in first year is 0? Or should we say the growth is 0?
@@ -225,7 +258,6 @@ def growth_rate(final_year, first_year):
     if first_year == 0:
         return None
     return (final_year - first_year) / first_year * 100
-
 
 # %%
 first_year = 2021
@@ -315,3 +347,73 @@ installers_per_year[
 )
 
 # %%
+
+
+# %% [markdown]
+# ## 8. Installations per 1000 households
+
+# %%
+installations_per_household = cumulative_installations.merge(la_households_countries_combined, left_on='Local Authority', right_on='LA', how='left')
+
+# %% [markdown]
+# ### Checking that the nulls are all from Northern Ireland
+
+# %%
+las_with_missing_data = installations_per_household[installations_per_household["LA"].isnull()]["Local Authority"].tolist()
+
+# %%
+flourish_LAs[flourish_LAs["Name"].isin(las_with_missing_data)]
+
+# %% [markdown]
+# ### Installations per 1000 households:
+
+# %%
+installations_per_household = installations_per_household[~installations_per_household["LA"].isnull()]
+
+# %%
+installations_per_household["installations per 1000 households"] = installations_per_household["Total number of installations"] / installations_per_household["Number of Households"] * 1000
+
+# %%
+installations_per_household.to_csv(
+    f"s3://asf-exploration/installer_show_maps_data/outputs/installatios_per_1000households.csv"
+)
+
+# %%
+
+
+# %% [markdown]
+# ## 9. Installations per year
+
+# %%
+installations_per_year = installations_data.groupby("commission_year").count()[["commission_date"]].rename(columns={"commission_date": "Number of installations"})
+
+# %%
+installations_per_year.to_csv(
+    f"s3://asf-exploration/installer_show_maps_data/outputs/installatios_per_year.csv"
+)
+
+# %% [markdown]
+# ## 10. Installations per month
+
+# %%
+installations_data["commission_month"] = installations_data["commission_date"].str[:7]
+
+# %%
+installations_per_month = installations_data.groupby("commission_month").count()[["commission_date"]].rename(columns={"commission_date": "Number of installations"})
+
+# %%
+months = pd.date_range(start=installations_data["commission_date"].min(), end=installations_data["commission_date"].max(), freq='M')
+months = [str(month)[:7] for month in months]
+
+# %%
+installations_per_month = installations_per_month.reindex(months).fillna(0)
+
+# %%
+installations_per_month.to_csv(
+    f"s3://asf-exploration/installer_show_maps_data/outputs/installatios_per_month.csv"
+)
+
+# %%
+
+
+

@@ -1,6 +1,13 @@
-# InstallerSHOW maps and visualisations
+# Data for visualisations: InstallerSHOW and policy report
 
-Putting together the data to be used in the Flourish story for the installerSHOW.
+Putting together the data to be used in the Flourish story for the installerSHOW and for some visualisations to be featured in the policy report.
+
+Data:
+- HP installations data from the MCS Installations database
+- LA codes from Flourish
+- Household data:
+    - (Scotland)[https://www.nrscotland.gov.uk/statistics-and-data/statistics/statistics-by-theme/households/household-estimates/2022] - Households and Dwellings in Scotland, 2022
+    - (England and Wales)[https://www.ons.gov.uk/datasets/TS041/editions/2021/versions/3] - census 2021
 
 ## Set up 🛠️
 Open your terminal and follow the instructions:
