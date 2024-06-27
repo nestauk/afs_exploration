@@ -69,6 +69,7 @@ installations_data["local_authority_updated"] = installations_data[
 # ## 3. Loading household data per local authority
 #
 # Household info for Scotland here:
+# https://www.nrscotland.gov.uk/statistics-and-data/statistics/statistics-by-theme/households/household-estimates/2022
 #
 # Household info for England and Wales here:
 # https://www.ons.gov.uk/datasets/TS041/editions/2021/versions/3
@@ -83,7 +84,6 @@ scotland_la_households = pd.read_excel(
 england_wales_la_households = pd.read_csv(
     "s3://asf-exploration/installer_show_maps_data/inputs/england_wales_households.csv"
 )
-
 
 # %%
 scotland_la_households.head()
