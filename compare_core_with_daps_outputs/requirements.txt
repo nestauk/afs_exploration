@@ -1,0 +1,11 @@
+pandas
+great_expectations
+pyarrow==14.0.1
+s3fs>=2023.3.0
+fastparquet
+dask
+PyYAML
+polars
+tqdm
+matplotlib
+notebook
