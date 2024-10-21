@@ -1,0 +1,3 @@
+pandas==1.5.1
+great_expectations==0.15.46
+ydata_profiling==v4.1.2
